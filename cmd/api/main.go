@@ -1,12 +1,13 @@
 package main
 
 import (
+	"app/internal/env"
 	"log"
 )
 
 func main() {
 	cfg := config{
-		addr: ":8080",
+		addr: env.GetString("ADDR", ":8080"),
 	} // это как создание обьекта класса в php
 
 	app := &application{

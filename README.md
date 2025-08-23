@@ -8,3 +8,8 @@
 #### Transport
 #### Service
 #### Storage
+
+
+```bash
+go run cmd/api/*.go
+```
