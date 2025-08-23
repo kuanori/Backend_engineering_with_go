@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/middleware"
 )
 
+// Структура в Go — это аналог класса в PHP, но без методов внутри
 type application struct {
 	config config
 }
@@ -17,6 +18,9 @@ type config struct {
 	addr string
 }
 
+// Это метод структуры application. *application означает,
+// что метод работает с указателем на структуру.
+// http.Handler — возвращаемый тип
 func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
