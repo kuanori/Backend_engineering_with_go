@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/internal/repository"
 	"log"
 	"net/http"
 	"time"
@@ -9,13 +10,14 @@ import (
 	"github.com/go-chi/chi/middleware"
 )
 
-// Структура в Go — это аналог класса в PHP, но без методов внутри
-type application struct {
-	config config
-}
-
 type config struct {
 	addr string
+}
+
+// Структура в Go — это аналог класса в PHP, но без методов внутри
+type application struct {
+	config     config
+	repository repository.Repository
 }
 
 // Это метод структуры application. *application означает,
