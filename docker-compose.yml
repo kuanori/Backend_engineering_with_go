@@ -1,0 +1,15 @@
+services:
+  db:
+   image: postgres:17.6-alpine3.22
+   container_name: postgre-db
+   environment:
+      POSTGRES_DB: socialnetwork
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpassword
+   volumes:
+      - db-data:/var/lib/postgressql/data
+   ports:
+     - "5432:5432"
+
+volumes:
+  db-data:
