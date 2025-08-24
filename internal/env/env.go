@@ -26,5 +26,4 @@ func GetInt(key string, fallback int) int {
 	}
 
 	return valAsInt
-
 }
