@@ -13,3 +13,8 @@
 ```bash
 go run cmd/api/*.go
 ```
+
+### migrate lib
+```bash
+migrate create -seq -ext sql -dir ./cmd/migrate/migrations create_users
+```
