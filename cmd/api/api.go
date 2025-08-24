@@ -12,6 +12,14 @@ import (
 
 type config struct {
 	addr string
+	db   dbConfig
+}
+
+type dbConfig struct {
+	addr         string
+	maxOpenConns int
+	maxIdleConns int
+	maxIdleTime  string
 }
 
 // Структура в Go — это аналог класса в PHP, но без методов внутри
