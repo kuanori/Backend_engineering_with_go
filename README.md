@@ -18,3 +18,7 @@ go run cmd/api/*.go
 ```bash
 migrate create -seq -ext sql -dir ./cmd/migrate/migrations create_users
 ```
+
+```bash
+make migrate-up
+```
