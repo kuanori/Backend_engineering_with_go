@@ -25,8 +25,8 @@ type PostRepository struct {
 func (s *PostRepository) Create(ctx context.Context, post *Post) error {
 
 	query := `
-		INSERT INTO posts (user_id, title, content,tags)
-		VALUES ($1, $2, $3, $4) RETURN id, created_at,
+		INSERT INTO posts (user_id, title, content, tags)
+		VALUES ($1, $2, $3, $4) RETURNING id, created_at;
 	`
 
 	err := s.db.QueryRowContext(
