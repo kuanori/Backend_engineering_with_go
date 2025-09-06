@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/internal/repository"
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -9,10 +10,20 @@ import (
 	"github.com/go-chi/chi"
 )
 
+type postkey string
+
+const postCtx postkey = "post"
+
 type CreatePostPayload struct {
 	Title   string   `json:"title" validate:"required,max=100"`
 	Content string   `json:"content" validate:"required,max=1000"`
 	Tags    []string `json:"tags"`
+}
+
+type UpdatePostPayload struct {
+	Title   *string   `json:"title" validate:"omitempty,max=100"`
+	Content *string   `json:"content" validate:"omitempty,max=1000"`
+	Tags    *[]string `json:"tags" validate:"omitempty"`
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -49,27 +60,9 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
-	idParam := chi.URLParam(r, "postID")
-	id, err := strconv.ParseInt(idParam, 10, 64)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	post := getPostFromCtx(r)
 
-	ctx := r.Context()
-
-	post, err := app.repository.Posts.GetById(ctx, id)
-	if err != nil {
-		switch {
-		case errors.Is(err, repository.ErrNotFound):
-			app.notFoundResponse(w, r, err)
-		default:
-			app.internalServerError(w, r, err)
-		}
-		return
-	}
-
-	comments, err := app.repository.Comments.GetByPostID(ctx, post.ID)
+	comments, err := app.repository.Comments.GetByPostID(r.Context(), post.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -77,7 +70,7 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	post.Comments = comments
 
-	if err := writeJSON(w, http.StatusCreated, post); err != nil {
+	if err := writeJSON(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -104,4 +97,72 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
+	post := getPostFromCtx(r)
+
+	var payload UpdatePostPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if payload.Title != nil {
+		post.Title = *payload.Title
+	}
+	if payload.Content != nil {
+		post.Content = *payload.Content
+	}
+	if payload.Tags != nil {
+		post.Tags = *payload.Tags
+	}
+
+	updatedPost, err := app.repository.Posts.Update(r.Context(), post)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJSON(w, http.StatusOK, updatedPost); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) postsContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		idParam := chi.URLParam(r, "postID")
+		id, err := strconv.ParseInt(idParam, 10, 64)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		ctx := r.Context()
+
+		post, err := app.repository.Posts.GetById(ctx, id)
+		if err != nil {
+			switch {
+			case errors.Is(err, repository.ErrNotFound):
+				app.notFoundResponse(w, r, err)
+			default:
+				app.internalServerError(w, r, err)
+			}
+			return
+		}
+
+		ctx = context.WithValue(ctx, postCtx, post)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getPostFromCtx(r *http.Request) *repository.Post {
+	post, _ := r.Context().Value(postCtx).(*repository.Post)
+	return post
 }

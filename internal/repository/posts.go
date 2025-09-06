@@ -100,3 +100,36 @@ func (s *PostRepository) Delete(ctx context.Context, postID int64) error {
 
 	return nil
 }
+
+func (s *PostRepository) Update(ctx context.Context, post *Post) (*Post, error) {
+	query := `
+        UPDATE posts 
+        SET title = $1, content = $2, tags = $3, updated_at = NOW()
+        WHERE id = $4
+        RETURNING id, user_id, title, content, tags, created_at, updated_at
+    `
+
+	var updatedPost Post
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		post.Title,
+		post.Content,
+		pq.Array(post.Tags),
+		post.ID,
+	).Scan(
+		&updatedPost.ID,
+		&updatedPost.UserID,
+		&updatedPost.Title,
+		&updatedPost.Content,
+		pq.Array(&updatedPost.Tags),
+		&updatedPost.CreatedAt,
+		&updatedPost.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedPost, nil
+}
