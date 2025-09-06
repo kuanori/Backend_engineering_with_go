@@ -79,3 +79,57 @@ func (s *PostRepository) GetById(ctx context.Context, id int64) (*Post, error) {
 
 	return &post, err
 }
+
+func (s *PostRepository) Delete(ctx context.Context, postID int64) error {
+
+	query := "DELETE FROM posts WHERE id = $1"
+
+	res, err := s.db.ExecContext(ctx, query, postID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (s *PostRepository) Update(ctx context.Context, post *Post) (*Post, error) {
+	query := `
+        UPDATE posts 
+        SET title = $1, content = $2, tags = $3, updated_at = NOW()
+        WHERE id = $4
+        RETURNING id, user_id, title, content, tags, created_at, updated_at
+    `
+
+	var updatedPost Post
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		post.Title,
+		post.Content,
+		pq.Array(post.Tags),
+		post.ID,
+	).Scan(
+		&updatedPost.ID,
+		&updatedPost.UserID,
+		&updatedPost.Title,
+		&updatedPost.Content,
+		pq.Array(&updatedPost.Tags),
+		&updatedPost.CreatedAt,
+		&updatedPost.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &updatedPost, nil
+}
