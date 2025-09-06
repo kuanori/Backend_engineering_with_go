@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("Resource not found")
+	ErrNotFound     = errors.New("Resource not found")
+	ErrEditConflict = errors.New("edit conflict")
 )
 
 // Это больше похоже на объект в PHP с двумя свойствами
