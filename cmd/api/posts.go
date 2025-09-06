@@ -2,7 +2,11 @@ package main
 
 import (
 	"app/internal/repository"
+	"errors"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi"
 )
 
 type CreatePostPayload struct {
@@ -30,6 +34,33 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 
 	if err := app.repository.Posts.Create(ctx, post); err != nil {
 		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := writeJSON(w, http.StatusCreated, post); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
+func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
+	idParam := chi.URLParam(r, "postID")
+	id, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx := r.Context()
+
+	post, err := app.repository.Posts.GetById(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			writeJSONError(w, http.StatusNotFound, err.Error())
+		default:
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 

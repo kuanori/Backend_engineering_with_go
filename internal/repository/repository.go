@@ -3,12 +3,18 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
+)
+
+var (
+	ErrNotFound = errors.New("Resource not found")
 )
 
 // Это больше похоже на объект в PHP с двумя свойствами
 type Repository struct {
 	Posts interface {
 		Create(context.Context, *Post) error
+		GetById(context.Context, int64) (*Post, error)
 	}
 	Users interface {
 		Create(context.Context, *User) error
