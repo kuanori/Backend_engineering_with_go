@@ -15,6 +15,7 @@ type Post struct {
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
 	Tags      []string  `json:"tags"`
+	Version   int64     `json:"version"`
 	CreatedAt string    `json:"created_at"`
 	UpdatedAt string    `json:"updated_at"`
 	Comments  []Comment `json:"comments"`
@@ -24,11 +25,14 @@ type PostRepository struct {
 	db *sql.DB
 }
 
+var ErrConflict = errors.New("edit conflict")
+
 func (s *PostRepository) Create(ctx context.Context, post *Post) error {
 
 	query := `
-		INSERT INTO posts (user_id, title, content, tags)
-		VALUES ($1, $2, $3, $4) RETURNING id, created_at;
+		INSERT INTO posts (user_id, title, content, tags, version)
+		VALUES ($1, $2, $3, $4, 1)
+		RETURNING id, created_at, version;
 	`
 
 	err := s.db.QueryRowContext(
@@ -41,6 +45,7 @@ func (s *PostRepository) Create(ctx context.Context, post *Post) error {
 	).Scan(
 		&post.ID,
 		&post.CreatedAt,
+		&post.Version,
 	)
 
 	if err != nil {
@@ -52,22 +57,24 @@ func (s *PostRepository) Create(ctx context.Context, post *Post) error {
 
 func (s *PostRepository) GetById(ctx context.Context, id int64) (*Post, error) {
 
-	query := `
-		SELECT id, user_id, title, content, tags, created_at, updated_at 
-		FROM posts 
-		WHERE id = $1;
-	`
-
 	var post Post
+	query := `
+	SELECT id, user_id, title, content, tags, version, created_at, updated_at 
+	FROM posts 
+	WHERE id = $1;
+`
+
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
 		&post.UserID,
 		&post.Title,
 		&post.Content,
 		pq.Array(&post.Tags),
+		&post.Version,
 		&post.CreatedAt,
 		&post.UpdatedAt,
 	)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -102,33 +109,39 @@ func (s *PostRepository) Delete(ctx context.Context, postID int64) error {
 }
 
 func (s *PostRepository) Update(ctx context.Context, post *Post) (*Post, error) {
+
 	query := `
-        UPDATE posts 
-        SET title = $1, content = $2, tags = $3, updated_at = NOW()
-        WHERE id = $4
-        RETURNING id, user_id, title, content, tags, created_at, updated_at
-    `
+		UPDATE posts
+		SET title = $1, content = $2, tags = $3, version = version + 1, updated_at = NOW()
+		WHERE id = $4 AND version = $5
+		RETURNING id, user_id, title, content, tags, version, created_at, updated_at
+	`
 
 	var updatedPost Post
-	err := s.db.QueryRowContext(
+	if err := s.db.QueryRowContext(
 		ctx,
 		query,
 		post.Title,
 		post.Content,
 		pq.Array(post.Tags),
 		post.ID,
+		post.Version, // старое значение
 	).Scan(
 		&updatedPost.ID,
 		&updatedPost.UserID,
 		&updatedPost.Title,
 		&updatedPost.Content,
 		pq.Array(&updatedPost.Tags),
+		&updatedPost.Version,
 		&updatedPost.CreatedAt,
 		&updatedPost.UpdatedAt,
-	)
-
-	if err != nil {
-		return nil, err
+	); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrEditConflict
+		default:
+			return nil, err
+		}
 	}
 
 	return &updatedPost, nil

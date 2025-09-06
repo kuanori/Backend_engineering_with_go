@@ -125,7 +125,14 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 
 	updatedPost, err := app.repository.Posts.Update(r.Context(), post)
 	if err != nil {
-		app.internalServerError(w, r, err)
+		switch {
+		case errors.Is(err, repository.ErrNotFound):
+			app.notFoundResponse(w, r, err)
+		case errors.Is(err, repository.ErrEditConflict):
+			app.conflictResponse(w, r, err) // HTTP 409
+		default:
+			app.internalServerError(w, r, err)
+		}
 		return
 	}
 
