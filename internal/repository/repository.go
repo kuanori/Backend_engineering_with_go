@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var (
-	ErrNotFound     = errors.New("Resource not found")
-	ErrEditConflict = errors.New("edit conflict")
+	ErrNotFound          = errors.New("Resource not found")
+	ErrEditConflict      = errors.New("edit conflict")
+	QueryTimeoutDuration = time.Second * 5
 )
 
 // Это больше похоже на объект в PHP с двумя свойствами
