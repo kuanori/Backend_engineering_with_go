@@ -23,6 +23,7 @@ type Repository struct {
 	}
 	Users interface {
 		Create(context.Context, *User) error
+		GetById(context.Context, int64) (*User, error)
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]Comment, error)
