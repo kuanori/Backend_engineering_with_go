@@ -21,7 +21,7 @@ type CommentRepository struct {
 func (s *CommentRepository) GetByPostID(ctx context.Context, postID int64) ([]Comment, error) {
 
 	query := `
-		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.user_name, u.id FROM comments c
+		SELECT c.id, c.post_id, c.user_id, c.content, c.created_at, u.username, u.id FROM comments c
 		JOIN users u ON u.id = c.user_id
 		WHERE c.post_id = $1
 		ORDER BY c.created_at DESC;
