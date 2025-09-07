@@ -29,13 +29,18 @@ type Repository struct {
 		GetByPostID(context.Context, int64) ([]Comment, error)
 		Create(context.Context, *Comment) error
 	}
+	Followers interface {
+		Follow(ctx context.Context, followerID, userID int64) error
+		Unfollow(ctx context.Context, followerID, userID int64) error
+	}
 }
 
 func NewRepository(db *sql.DB) Repository {
 	// создает и возвращает экземпляр структуры Repository
 	return Repository{
-		Posts:    &PostRepository{db}, // создается экземпляр структуры PostsRepository
-		Users:    &UserRepository{db},
-		Comments: &CommentRepository{db},
+		Posts:     &PostRepository{db}, // создается экземпляр структуры PostsRepository
+		Users:     &UserRepository{db},
+		Comments:  &CommentRepository{db},
+		Followers: &FollowerRepository{db},
 	}
 }
