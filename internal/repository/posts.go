@@ -35,6 +35,9 @@ func (s *PostRepository) Create(ctx context.Context, post *Post) error {
 		RETURNING id, created_at, version;
 	`
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -62,7 +65,10 @@ func (s *PostRepository) GetById(ctx context.Context, id int64) (*Post, error) {
 	SELECT id, user_id, title, content, tags, version, created_at, updated_at 
 	FROM posts 
 	WHERE id = $1;
-`
+	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&post.ID,
@@ -91,6 +97,9 @@ func (s *PostRepository) Delete(ctx context.Context, postID int64) error {
 
 	query := "DELETE FROM posts WHERE id = $1"
 
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
 	res, err := s.db.ExecContext(ctx, query, postID)
 	if err != nil {
 		return err
@@ -116,6 +125,9 @@ func (s *PostRepository) Update(ctx context.Context, post *Post) (*Post, error) 
 		WHERE id = $4 AND version = $5
 		RETURNING id, user_id, title, content, tags, version, created_at, updated_at
 	`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	var updatedPost Post
 	if err := s.db.QueryRowContext(
