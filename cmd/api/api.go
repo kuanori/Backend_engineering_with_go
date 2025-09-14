@@ -4,13 +4,13 @@ import (
 	"app/docs"
 	"app/internal/repository"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.uber.org/zap"
 )
 
 type config struct {
@@ -32,6 +32,7 @@ type dbConfig struct {
 type application struct {
 	config     config
 	repository repository.Repository
+	logger     *zap.SugaredLogger
 }
 
 // Это метод структуры application. *application означает,
@@ -97,7 +98,7 @@ func (app *application) run(r http.Handler) error {
 		IdleTimeout:  time.Minute,
 	}
 
-	log.Printf("Server has started at %s", app.config.addr)
+	app.logger.Infow("Server has started at", "addr", app.config.addr, "env", app.config.env)
 
 	return srv.ListenAndServe()
 }
