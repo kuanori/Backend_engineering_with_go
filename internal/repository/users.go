@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -11,6 +13,23 @@ type User struct {
 	Email     string `json:"email"`
 	Password  string `json:"-"`
 	CreatedAt string `json:"created_at"`
+}
+
+type password struct {
+	text *string
+	hash []byte
+}
+
+func (p *password) Set(text string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(text), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	p.text = &text
+	p.hash = hash
+
+	return nil
 }
 
 type UserRepository struct {
@@ -80,4 +99,9 @@ func (s *UserRepository) GetById(ctx context.Context, userID int64) (*User, erro
 	}
 
 	return user, nil
+}
+
+func (s *UserRepository) CreateAndInvite(ctx context.Context, user User, token string) error {
+
+	return
 }
