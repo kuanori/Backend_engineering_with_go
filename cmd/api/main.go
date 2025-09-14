@@ -4,7 +4,8 @@ import (
 	"app/internal/db"
 	"app/internal/env"
 	"app/internal/repository"
-	"log"
+
+	"go.uber.org/zap"
 )
 
 //	@title			Social API
@@ -38,6 +39,11 @@ func main() {
 		version: env.GetString("VERSION", "0.0.1"),
 	} // это как создание обьекта класса в php
 
+	// logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+	defer logger.Sync()
+
+	// database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -45,19 +51,20 @@ func main() {
 		cfg.db.maxIdleTime,
 	)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic(err)
 	}
 
 	defer db.Close()
-	log.Println("database connection is established")
+	logger.Info("database connection is established")
 
 	repository := repository.NewRepository(db)
 
 	app := &application{
 		config:     cfg,
 		repository: repository,
+		logger:     logger,
 	}
 
 	r := app.mount() // Вызывается метод mount у структуры application
-	log.Fatal(app.run(r))
+	logger.Fatal(app.run(r))
 }
