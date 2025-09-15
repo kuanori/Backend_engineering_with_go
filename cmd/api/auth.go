@@ -2,7 +2,11 @@ package main
 
 import (
 	"app/internal/repository"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type RegisterUserPaylod struct {
@@ -41,6 +45,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		Email:    payload.Email,
 	}
 
+	// hash the user password
 	if err := user.Password.Set(payload.Password); err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -48,7 +53,24 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 
-	err := app.repository.Users.CreateAndInvite(ctx, user, "token-123")
+	plainToken := uuid.New().String()
+	hash := sha256.Sum256([]byte(plainToken))
+	hashToken := hex.EncodeToString(hash[:])
+
+	// store the user
+	err := app.repository.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
+	if err != nil {
+		switch err {
+		case repository.ErrDuplicateEmail:
+		case repository.ErrEditConflict:
+			app.badRequestResponse(w, r, err)
+		case repository.ErrDuplicateUsername:
+			app.badRequestResponse(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
 
 	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
 		app.internalServerError(w, r, err)

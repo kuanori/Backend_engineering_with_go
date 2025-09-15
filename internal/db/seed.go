@@ -80,7 +80,7 @@ func Seed(repository repository.Repository, db *sql.DB) {
 	tx, _ := db.BeginTx(ctx, nil)
 
 	for _, user := range users {
-		if err := repository.Users.Create(ctx, user); err != nil {
+		if err := repository.Users.Create(ctx, tx, user); err != nil {
 			log.Println("Error creating user:", err)
 			return
 		}

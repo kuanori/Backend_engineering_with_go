@@ -4,6 +4,7 @@ import (
 	"app/internal/db"
 	"app/internal/env"
 	"app/internal/repository"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -37,6 +38,9 @@ func main() {
 		},
 		env:     env.GetString("ENV", "development"),
 		version: env.GetString("VERSION", "0.0.1"),
+		mail: mailConfig{
+			exp: time.Hour * 24 * 3, // 3 days
+		},
 	} // это как создание обьекта класса в php
 
 	// logger
