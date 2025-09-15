@@ -81,6 +81,7 @@ func Seed(repository repository.Repository, db *sql.DB) {
 
 	for _, user := range users {
 		if err := repository.Users.Create(ctx, tx, user); err != nil {
+			_ = tx.Rollback()
 			log.Println("Error creating user:", err)
 			return
 		}

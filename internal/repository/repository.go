@@ -10,8 +10,6 @@ import (
 var (
 	ErrNotFound          = errors.New("Resource not found")
 	ErrEditConflict      = errors.New("edit conflict")
-	ErrDuplicateEmail      = errors.New("Email already registered")
-	ErrDuplicateUsername      = errors.New("Username is taken")
 	QueryTimeoutDuration = time.Second * 5
 )
 
@@ -27,7 +25,8 @@ type Repository struct {
 	Users interface {
 		Create(context.Context, *sql.Tx, *User) error
 		GetById(context.Context, int64) (*User, error)
-		CreateAndInvite(context.Context, user *User, token string, exp time.Duration) (error)
+		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
+		Activate(context.Context, string) error
 	}
 	Comments interface {
 		GetByPostID(context.Context, int64) ([]Comment, error)
@@ -52,13 +51,13 @@ func NewRepository(db *sql.DB) Repository {
 func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	if err := fn(tx); err != nil {
 		_ = tx.Rollback()
-		return  err
+		return err
 	}
 
-	return  tx.Commit()
+	return tx.Commit()
 }

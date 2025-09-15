@@ -2,17 +2,20 @@ package main
 
 import (
 	"app/internal/repository"
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 
 	"github.com/google/uuid"
 )
 
-type RegisterUserPaylod struct {
-	Username string `json:"username "validate:required,max=100"`
-	Email    string `json:"email" "validate:required,email,max=255"`
-	Password string `json:"password" "validate:required,min=3,max=72"`
+type RegisterUserPayload struct {
+	Username string `json:"username" validate:"required,max=100"`
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+type UserWithToken struct {
+	*repository.User
+	Token string `json:"token"`
 }
 
 // registerUserHandler godoc
@@ -29,8 +32,8 @@ type RegisterUserPaylod struct {
 //	@Router			/authentication/user [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	var payload RegisterUserPaylod
-	if err := readJSON(w, r, payload); err != nil {
+	var payload RegisterUserPayload
+	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -54,11 +57,9 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	ctx := r.Context()
 
 	plainToken := uuid.New().String()
-	hash := sha256.Sum256([]byte(plainToken))
-	hashToken := hex.EncodeToString(hash[:])
 
 	// store the user
-	err := app.repository.Users.CreateAndInvite(ctx, user, hashToken, app.config.mail.exp)
+	err := app.repository.Users.CreateAndInvite(ctx, user, plainToken, app.config.mail.exp)
 	if err != nil {
 		switch err {
 		case repository.ErrDuplicateEmail:
@@ -72,7 +73,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
+	userWithToken := UserWithToken{
+		User:  user,
+		Token: plainToken,
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, userWithToken); err != nil {
 		app.internalServerError(w, r, err)
 	}
 }
