@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/docs"
+	"app/internal/mailer"
 	"app/internal/repository"
 	"fmt"
 	"net/http"
@@ -14,16 +15,23 @@ import (
 )
 
 type config struct {
-	addr    string
-	apiURL  string
-	db      dbConfig
-	env     string
-	version string
-	mail    mailConfig
+	addr        string
+	apiURL      string
+	db          dbConfig
+	env         string
+	version     string
+	mail        mailConfig
+	frontendURL string
 }
 
 type mailConfig struct {
-	exp time.Duration
+	fromEmail string
+	sendGrid  sendGridConfig
+	exp       time.Duration
+}
+
+type sendGridConfig struct {
+	apiKey string
 }
 
 type dbConfig struct {
@@ -38,6 +46,7 @@ type application struct {
 	config     config
 	repository repository.Repository
 	logger     *zap.SugaredLogger
+	mailer     mailer.Client
 }
 
 // Это метод структуры application. *application означает,

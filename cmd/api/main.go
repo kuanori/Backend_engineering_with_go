@@ -3,6 +3,7 @@ package main
 import (
 	"app/internal/db"
 	"app/internal/env"
+	"app/internal/mailer"
 	"app/internal/repository"
 	"time"
 
@@ -28,8 +29,9 @@ import (
 // @description
 func main() {
 	cfg := config{
-		addr:   env.GetString("ADDR", ":8080"),
-		apiURL: env.GetString("EXTERNAL_URL", "localhost:8080"),
+		addr:        env.GetString("ADDR", ":8080"),
+		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
+		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:4000"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost/socialnetwork?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
@@ -39,7 +41,11 @@ func main() {
 		env:     env.GetString("ENV", "development"),
 		version: env.GetString("VERSION", "0.0.1"),
 		mail: mailConfig{
-			exp: time.Hour * 24 * 3, // 3 days
+			exp:       time.Hour * 24 * 3, // 3 days
+			fromEmail: env.GetString("FROM_EMAIL", "kuanyshmykyev@gmail.com"),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", "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"),
+			},
 		},
 	} // это как создание обьекта класса в php
 
@@ -62,11 +68,13 @@ func main() {
 	logger.Info("database connection is established")
 
 	repository := repository.NewRepository(db)
+	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
 
 	app := &application{
 		config:     cfg,
 		repository: repository,
 		logger:     logger,
+		mailer:     mailer,
 	}
 
 	r := app.mount() // Вызывается метод mount у структуры application
