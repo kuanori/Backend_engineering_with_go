@@ -42,5 +42,8 @@ func (app *application) jsonResponse(w http.ResponseWriter, status int, data any
 		Data any `json:"data"`
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
 	return writeJSON(w, status, &envelope{Data: data})
 }
