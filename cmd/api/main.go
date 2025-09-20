@@ -47,6 +47,12 @@ func main() {
 				apiKey: env.GetString("SENDGRID_API_KEY", "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"),
 			},
 		},
+		auth: authConfig{
+			basic: basicConfig{
+				user: env.GetString("AUTH_BASIC_USER", "admin"),
+				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
+			},
+		},
 	} // это как создание обьекта класса в php
 
 	// logger

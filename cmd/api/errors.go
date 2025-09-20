@@ -24,3 +24,17 @@ func (app *application) conflictResponse(w http.ResponseWriter, r *http.Request,
 	message := "edit conflict: the record you are trying to update has been modified by someone else"
 	writeJSONError(w, http.StatusConflict, message)
 }
+
+func (app *application) unauthorizedErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("unauthorized error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+}
+
+func (app *application) unauthorizedBasicErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnf("unauthorized basic error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+}
