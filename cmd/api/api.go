@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/docs"
+	"app/internal/auth"
 	"app/internal/mailer"
 	"app/internal/repository"
 	"fmt"
@@ -17,16 +18,23 @@ import (
 type config struct {
 	addr        string
 	apiURL      string
-	db          dbConfig
 	env         string
 	version     string
-	mail        mailConfig
 	frontendURL string
+	db          dbConfig
+	mail        mailConfig
 	auth        authConfig
 }
 
 type authConfig struct {
 	basic basicConfig
+	token tokenConfig
+}
+
+type tokenConfig struct {
+	secret string
+	iss    string
+	exp    time.Duration
 }
 
 type basicConfig struct {
@@ -53,10 +61,11 @@ type dbConfig struct {
 
 // Структура в Go — это аналог класса в PHP, но без методов внутри
 type application struct {
-	config     config
-	repository repository.Repository
-	logger     *zap.SugaredLogger
-	mailer     mailer.Client
+	config        config
+	repository    repository.Repository
+	logger        *zap.SugaredLogger
+	mailer        mailer.Client
+	authenticator auth.Authenticator
 }
 
 // Это метод структуры application. *application означает,
@@ -108,6 +117,7 @@ func (app *application) mount() http.Handler {
 
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
+			r.Post("/token", app.createTokenHandler)
 		})
 	})
 

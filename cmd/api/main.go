@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/internal/auth"
 	"app/internal/db"
 	"app/internal/env"
 	"app/internal/mailer"
@@ -52,6 +53,11 @@ func main() {
 				user: env.GetString("AUTH_BASIC_USER", "admin"),
 				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
 			},
+			token: tokenConfig{
+				iss:    "social",
+				secret: env.GetString("AUTH_TOKEN_SECRET", "example"),
+				exp:    time.Hour * 24 * 3, // 3 days and relogin
+			},
 		},
 	} // это как создание обьекта класса в php
 
@@ -76,11 +82,17 @@ func main() {
 	repository := repository.NewRepository(db)
 	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
 
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.token.secret,
+		cfg.auth.token.iss,
+		cfg.auth.token.iss)
+
 	app := &application{
-		config:     cfg,
-		repository: repository,
-		logger:     logger,
-		mailer:     mailer,
+		config:        cfg,
+		repository:    repository,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	r := app.mount() // Вызывается метод mount у структуры application
