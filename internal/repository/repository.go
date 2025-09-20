@@ -16,15 +16,16 @@ var (
 // Это больше похоже на объект в PHP с двумя свойствами
 type Repository struct {
 	Posts interface {
-		Create(context.Context, *Post) error
 		GetById(context.Context, int64) (*Post, error)
+		GetUserFeed(context.Context, int64, PaginatedFeedQuery) ([]PostWithMetadata, error)
+		Create(context.Context, *Post) error
 		Delete(context.Context, int64) error
 		Update(context.Context, *Post) (*Post, error)
-		GetUserFeed(context.Context, int64, PaginatedFeedQuery) ([]PostWithMetadata, error)
 	}
 	Users interface {
-		Create(context.Context, *sql.Tx, *User) error
 		GetById(context.Context, int64) (*User, error)
+		GetByEmail(context.Context, string) (*User, error)
+		Create(context.Context, *sql.Tx, *User) error
 		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
 		Activate(context.Context, string) error
 		Delete(context.Context, int64) error
