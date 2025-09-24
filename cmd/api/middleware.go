@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app/internal/repository"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -91,4 +92,38 @@ func (app *application) BasicAuthMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func (app *application) checkPostOwnership(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := getUserFromContext(r)
+		post := getPostFromCtx(r)
+
+		if post.UserID == user.ID {
+			next(w, r)
+			return
+		}
+
+		allowed, err := app.checkRolePrecedence(r.Context(), user, requiredRole)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		if !allowed {
+			app.forbiddenResponse(w, r, nil)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+func (app *application) checkRolePrecedence(ctx context.Context, user *repository.User, roleName string) (bool, error) {
+	role, err := app.repository.Roles.GetByName(ctx, roleName)
+	if err != nil {
+		return false, err
+	}
+
+	return user.Role.Level >= role.Level, nil
 }

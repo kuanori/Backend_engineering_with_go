@@ -50,6 +50,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	user := &repository.User{
 		Username: payload.Username,
 		Email:    payload.Email,
+		RoleID:   1,
 	}
 
 	// hash the user password
