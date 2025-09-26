@@ -115,7 +115,9 @@ func generateUsers(num int) []*repository.User {
 		users[i] = &repository.User{
 			Username: usernames[i%len(usernames)] + fmt.Sprintf("%d", i),
 			Email:    usernames[i%len(usernames)] + fmt.Sprintf("%d", i) + "@example.com",
-			RoleID:   1,
+			Role: repository.Role{
+				Name: "user",
+			},
 		}
 	}
 
