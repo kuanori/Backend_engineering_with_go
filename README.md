@@ -11,7 +11,7 @@
 
 
 ```bash
-go run cmd/api/*.go
+go run ./cmd/api
 ```
 
 ### migrate lib

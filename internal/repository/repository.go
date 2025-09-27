@@ -23,7 +23,7 @@ type Repository struct {
 		Update(context.Context, *Post) (*Post, error)
 	}
 	Users interface {
-		GetById(context.Context, int64) (*User, error)
+		GetById(ctx context.Context, userID int64) (*User, error)
 		GetByEmail(context.Context, string) (*User, error)
 		Create(context.Context, *sql.Tx, *User) error
 		CreateAndInvite(ctx context.Context, user *User, token string, exp time.Duration) error
