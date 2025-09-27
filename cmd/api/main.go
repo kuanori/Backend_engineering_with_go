@@ -5,6 +5,7 @@ import (
 	"app/internal/db"
 	"app/internal/env"
 	"app/internal/mailer"
+	"app/internal/ratelimiter"
 	"app/internal/repository"
 	"app/internal/repository/cache"
 	"time"
@@ -67,6 +68,11 @@ func main() {
 			db:      env.GetInt("REDIS_DB", 0),
 			enabled: env.GetBool("REDIS_ENABLED", true),
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATELIMITER_ENABLED", true),
+		},
 	} // это как создание обьекта класса в php
 
 	// logger
@@ -97,6 +103,10 @@ func main() {
 	repository := repository.NewRepository(db)
 	cacheRepository := cache.NewRedisRepository(rdb)
 	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
 
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
@@ -110,6 +120,7 @@ func main() {
 		logger:          logger,
 		mailer:          mailer,
 		authenticator:   jwtAuthenticator,
+		rateLimiter:     rateLimiter,
 	}
 
 	r := app.mount() // Вызывается метод mount у структуры application

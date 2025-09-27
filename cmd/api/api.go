@@ -4,6 +4,7 @@ import (
 	"app/docs"
 	"app/internal/auth"
 	"app/internal/mailer"
+	"app/internal/ratelimiter"
 	"app/internal/repository"
 	"app/internal/repository/cache"
 	"context"
@@ -31,6 +32,7 @@ type config struct {
 	mail        mailConfig
 	auth        authConfig
 	redisCfg    redisConfig
+	rateLimiter ratelimiter.Config
 }
 
 type authConfig struct {
@@ -81,6 +83,7 @@ type application struct {
 	logger          *zap.SugaredLogger
 	mailer          mailer.Client
 	authenticator   auth.Authenticator
+	rateLimiter     ratelimiter.Limiter
 }
 
 // Это метод структуры application. *application означает,
@@ -93,6 +96,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(app.RateLimiterMiddleware)
 
 	r.Use(middleware.Timeout(60 * time.Second))
 
