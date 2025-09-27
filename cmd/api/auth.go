@@ -95,6 +95,8 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		ActivationURL: activationURL,
 	}
 
+	// log.Println("sleeping for test")
+	// time.Sleep(time.Second * 5)
 	status, err := app.mailer.Send(mailer.UserWelcomeTemplate, user.Username, user.Email, vars, false)
 	if err != nil {
 		app.logger.Errorw("error sending welcome email", "error", err)
