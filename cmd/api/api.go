@@ -5,6 +5,7 @@ import (
 	"app/internal/auth"
 	"app/internal/mailer"
 	"app/internal/repository"
+	"app/internal/repository/cache"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,11 +25,19 @@ type config struct {
 	db          dbConfig
 	mail        mailConfig
 	auth        authConfig
+	redisCfg    redisConfig
 }
 
 type authConfig struct {
 	basic basicConfig
 	token tokenConfig
+}
+
+type redisConfig struct {
+	addr    string
+	pw      string
+	db      int
+	enabled bool
 }
 
 type tokenConfig struct {
@@ -61,11 +70,12 @@ type dbConfig struct {
 
 // Структура в Go — это аналог класса в PHP, но без методов внутри
 type application struct {
-	config        config
-	repository    repository.Repository
-	logger        *zap.SugaredLogger
-	mailer        mailer.Client
-	authenticator auth.Authenticator
+	config          config
+	repository      repository.Repository
+	cacheRepository cache.Repository
+	logger          *zap.SugaredLogger
+	mailer          mailer.Client
+	authenticator   auth.Authenticator
 }
 
 // Это метод структуры application. *application означает,
