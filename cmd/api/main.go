@@ -8,6 +8,8 @@ import (
 	"app/internal/ratelimiter"
 	"app/internal/repository"
 	"app/internal/repository/cache"
+	"expvar"
+	"runtime"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -122,6 +124,17 @@ func main() {
 		authenticator:   jwtAuthenticator,
 		rateLimiter:     rateLimiter,
 	}
+
+	expvar.NewString("version").Set(cfg.version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("redis", expvar.Func(func() any {
+		return rdb.PoolStats()
+	}))
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	r := app.mount() // Вызывается метод mount у структуры application
 	logger.Fatal(app.run(r))
