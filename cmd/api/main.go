@@ -6,8 +6,10 @@ import (
 	"app/internal/env"
 	"app/internal/mailer"
 	"app/internal/repository"
+	"app/internal/repository/cache"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -59,6 +61,12 @@ func main() {
 				exp:    time.Hour * 24 * 3, // 3 days and relogin
 			},
 		},
+		redisCfg: redisConfig{
+			addr:    env.GetString("REDIS_ADDR", "localhost:6379"),
+			pw:      env.GetString("REDIS_PW", ""),
+			db:      env.GetInt("REDIS_DB", 0),
+			enabled: env.GetBool("REDIS_ENABLED", true),
+		},
 	} // это как создание обьекта класса в php
 
 	// logger
@@ -79,7 +87,15 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection is established")
 
+	// Cache
+	var rdb *redis.Client
+	if cfg.redisCfg.enabled {
+		rdb = cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
+		logger.Info("redis connection is established")
+	}
+
 	repository := repository.NewRepository(db)
+	cacheRepository := cache.NewRedisRepository(rdb)
 	mailer := mailer.NewSendgrid(cfg.mail.sendGrid.apiKey, cfg.mail.fromEmail)
 
 	jwtAuthenticator := auth.NewJWTAuthenticator(
@@ -88,11 +104,12 @@ func main() {
 		cfg.auth.token.iss)
 
 	app := &application{
-		config:        cfg,
-		repository:    repository,
-		logger:        logger,
-		mailer:        mailer,
-		authenticator: jwtAuthenticator,
+		config:          cfg,
+		repository:      repository,
+		cacheRepository: cacheRepository,
+		logger:          logger,
+		mailer:          mailer,
+		authenticator:   jwtAuthenticator,
 	}
 
 	r := app.mount() // Вызывается метод mount у структуры application
