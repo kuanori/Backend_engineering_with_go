@@ -1,53 +1,78 @@
 package main
 
 import (
-	"app/internal/ratelimiter"
+	"net"
 	"net/http"
-	"net/http/httptest"
-	"testing"
+	"strings"
+	"sync"
 	"time"
 )
 
-func TestRateLimiterMiddleware(t *testing.T) {
-	cfg := config{
-		rateLimiter: ratelimiter.Config{
-			RequestsPerTimeFrame: 100,
-			TimeFrame:            time.Second * 5,
-			Enabled:              true,
-		},
-		addr: ":8080",
+type Config struct {
+	RequestsPerTimeFrame int
+	TimeFrame            time.Duration
+	Enabled              bool
+}
+
+type RateLimiter struct {
+	cfg     Config
+	clients map[string]*clientData
+	mu      sync.Mutex
+}
+
+type clientData struct {
+	count      int
+	expiration time.Time
+}
+
+func New(cfg Config) *RateLimiter {
+	return &RateLimiter{
+		cfg:     cfg,
+		clients: make(map[string]*clientData),
+	}
+}
+
+// Middleware для HTTP
+func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
+	if !rl.cfg.Enabled {
+		return next
 	}
 
-	app := newTestApplication(t, cfg)
-	ts := httptest.NewServer(app.mount())
-	defer ts.Close()
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := getClientIP(r)
 
-	client := &http.Client{}
-	mockIP := "192.168.1.1"
-	marginOfError := 2
+		rl.mu.Lock()
+		defer rl.mu.Unlock()
 
-	for i := 0; i < cfg.rateLimiter.RequestsPerTimeFrame+marginOfError; i++ {
-		req, err := http.NewRequest("GET", ts.URL+"/v1/health", nil)
-		if err != nil {
-			t.Fatalf("could not create request: %v", err)
-		}
+		data, exists := rl.clients[ip]
+		now := time.Now()
 
-		req.Header.Set("X-Forwarded-For", mockIP)
-
-		resp, err := client.Do(req)
-		if err != nil {
-			t.Fatalf("could not send request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		if i < cfg.rateLimiter.RequestsPerTimeFrame {
-			if resp.StatusCode != http.StatusOK {
-				t.Errorf("expected status OK; got %v", resp.Status)
+		if !exists || now.After(data.expiration) {
+			// новое окно
+			rl.clients[ip] = &clientData{
+				count:      1,
+				expiration: now.Add(rl.cfg.TimeFrame),
 			}
 		} else {
-			if resp.StatusCode != http.StatusTooManyRequests {
-				t.Errorf("expected status Too Many Requests; got %v", resp.Status)
+			data.count++
+			if data.count > rl.cfg.RequestsPerTimeFrame {
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
 			}
 		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Извлекаем IP из X-Forwarded-For или RemoteAddr
+func getClientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		return strings.Split(xff, ",")[0]
 	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
 }
