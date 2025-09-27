@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/kuanori/Backend_engineering_with_go/compare/v1.0.0...v1.1.0) (2025-09-27)
+
+
+### Features
+
+* update api version automatically & fix extension name ([eeaaf73](https://github.com/kuanori/Backend_engineering_with_go/commit/eeaaf73391c225477821519354779938bf99e6a7))
+
 ## 1.0.0 (2025-09-27)
 
 
