@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrNotFound          = errors.New("Resource not found")
+	ErrNotFound          = errors.New("resource not found")
 	ErrEditConflict      = errors.New("edit conflict")
 	QueryTimeoutDuration = time.Second * 5
 )
