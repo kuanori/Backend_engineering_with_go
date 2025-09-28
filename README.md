@@ -1,15 +1,58 @@
-# Backend_engineering_with_go
+# Backend Engineering with Go
 
-### cmd - entrypoint of app
-### bin - binaries
+🚀A learning project built while taking "Backend Engineering with Go" Udemy course
+
+**Course:** [Backend Engineering with Go](https://www.udemy.com/course/backend-engineering-with-go)
+
+## ✨ Features
+
+### 🏗 Architecture & Design
+- **Clean Layered Architecture** (Transport/Service/Storage)
+- **Repository Pattern** for data access
+- **REST API**
+
+### 🔐 Authentication & Authorization
+- **JWT Token-based authentication**
+- **Role-based authorization** with middleware
+- **User registration & activation flow & email**
+- **Secure password handling**
+
+### 💾 Database & Persistence
+- **PostgreSQL** with connection pooling
+- **SQL migrations** with version control
+- **Database seeding** for development
+- **SQL transactions** for data consistency
+- **Optimistic concurrency control**
+- **Query timeouts** management
+
+### 📊 Social Features
+- **User management** (profiles, registration)
+- **Post creation** with comments
+- **User following system**
+- **Feed algorithm** with pagination
+- **Feed filtering** and sorting
+
+### 🛠 Development & DevOps
+- **Swagger/OpenAPI** auto-generated documentation
+- **Structured logging** system
+- **Continuous Integration** setup
+
+### 🚀 Performance & Security
+- **Rate limiting** middleware
+- **CORS handling**
+- **Caching strategies** (user profiles)
+- **SQL indexes** optimization
+- **Concurrency control** with mutexes
+- **Server metrics** monitoring
+
+### ✅ Testing & Quality
+- **User handler** unit 
+- **Error handling** standardization
+- **Payload validation**
+- **Performance testing** with Autocannon
 
 
-### Layers
-#### Transport
-#### Service
-#### Storage
-
-
+### ⌨️ Commands
 ```bash
 go run ./cmd/api
 ```
