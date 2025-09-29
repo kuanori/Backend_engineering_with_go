@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/kuanori/Backend_engineering_with_go/compare/v1.1.0...v1.1.1) (2025-09-29)
+
+
+### Bug Fixes
+
+* use correct value name ([9bf5d40](https://github.com/kuanori/Backend_engineering_with_go/commit/9bf5d405f0d4ac0ff041d70a5e0efc7c0c57c9d2))
+
 ## [1.1.0](https://github.com/kuanori/Backend_engineering_with_go/compare/v1.0.0...v1.1.0) (2025-09-27)
 
 
