@@ -70,7 +70,7 @@ func (s *UserRepository) Create(ctx context.Context, tx *sql.Tx, user *User) err
 		user.Username,
 		user.Email,
 		user.Password.hash,
-		user.RoleID,
+		role,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
